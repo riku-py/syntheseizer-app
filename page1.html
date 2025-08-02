@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>トップページ</title>
+  <link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+<style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      
+    }
+   table {
+    border-collapse: collapse;
+    margin: 20px auto; /* ← テーブル全体を中央表示 */
+    width: 80%;
+  }
+    th, td {
+    border: 1px solid #666;
+    padding: 10px;
+    text-align: center;       /* ← 横方向中央揃え */
+    vertical-align: middle;   /* ← 縦方向中央揃え */
+  }
+</style>
+</head>
+<body>
+
+  <!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div style="margin-left:240px; padding:20px;">
+<h1>フィルター</h1>
+<p>フィルターとは、特定の周波数成分をカットすることで音色を変化させる機能のことを言います。</br>
+カットする周波数帯域によってフィルターの種類が異なります。</br>
+</br>
+<h2>フィルター種別</h2>
+フィルターには、主に三種類あります。</br>
+
+①	ローパスフィルター</br>
+②	ハイパスフィルター</br>
+③	バンドパスフィルター</br>
+
+ローパスフィルターは、名前の通り、low(低い)をpass(通す)するフィルターです。</br>
+つまり、高域周波成分をカットするフィルターがローパスフィルターです。</br></br>
+ハイパスフィルターも同様に、high(高い)をpass(通す)するフィルターである。</br>
+つまり、低域周波成分をカットするフィルターがハイパスフィルターです。</br></br>
+バンドパスフィルターは、特定の周波数帯域のみが通過可能なフィルターです。</br>
+
+ここで、「カットオフ周波数」というものが重要になります。</br></br>
+<h2>カットオフ周波数</h2>
+これはどの周波数帯域をカットするかを決めるためのパラメータです。</br>
+つまり、ローパスフィルターに、カットオフ周波数5000Hzを適応した場合は、5000Hzより高い周波成分はカットされます。</br>
+逆に、ハイパスフィルターに、適応した場合は、5000Hz
+より低い周波成分はカットされます。</br>
+バンドパスフィルターの場合は、5000Hz
+周辺の周波成分のみを通します。</br>
+</p>
+<img src="filter1.png">
+</br>
+<img src="filter2.png">
+</br>
+<img src="filter3.png">
+
+<p onclick="location.href='filter.html'" style="cursor: pointer;">
+   フィルター体験へ
+</p>
+
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+</div>
+
+</body>
+</html>

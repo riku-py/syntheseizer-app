@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>トップページ</title>
+  <link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+<style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      
+    }
+   table {
+    border-collapse: collapse;
+    margin: 20px auto; /* ← テーブル全体を中央表示 */
+    width: 80%;
+  }
+    th, td {
+    border: 1px solid #666;
+    padding: 10px;
+    text-align: center;       /* ← 横方向中央揃え */
+    vertical-align: middle;   /* ← 縦方向中央揃え */
+  }
+</style>
+</head>
+<body>
+
+  <!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div style="margin-left:240px; padding:20px;">
+    <h1>トップページ</h1>
+    <h2>シンセサイザとは？</h2>
+	 <p>シンセサイザとは、色々な音を組み合わせて、自分好みのオリジナル音を作り出すことのできる電子楽器のこと</p>
+</br>
+    <h2>シンセサイザの構造</h2>
+	 <p>オシレーター、フィルター、ADSRエンベロープ、ノイズ、モジュレーション…色々な機能が組み合わさって構成されている。</br>本ツールは、この中でも特に重要な機能である、「オシレーター」、「フィルター」、「ADSRエンベロープ」について、体験ツールを通して、直感的に音作りができるように導くことが目的である</p>
+</br>  
+<h2>オシレーターとは？</h2>
+ <p>まず、オシレーターについてです。
+オシレーターというのは、音の基本となる波を生成する部分のことを言います。
+その波には、四つの種類があります。
+</p>
+<p>①	サイン波（正弦波）
+②	三角波
+③	ノコギリ波
+④	矩形波
+</p>
+<p>それぞれ波形に特徴があります。</p>
+
+<img src="wave.png">
+<table>
+  <tr>
+    <th>項目</th>
+    <th>値</th>
+  </tr>
+  <tr>
+    <td>サイン波　</td>
+    <td>　柔らかく、優しい音。ベースや、深みを出すのに有効。</td>
+  </tr>
+  <tr>
+    <td>三角波　</td>
+    <td>　正弦波に近いが少し明るい音</td>
+  </tr>
+　<tr>
+    <td>ノコギリ波</td>
+    <td>　最も明るく、存在感のある音。いかにもシンセサイザの音</td>
+  </tr>
+　<tr>
+    <td>矩形波　</td>
+    <td>　パルス的で、はっきりした音。ゲーム音などに有効。</td>
+  </tr>
+</table>
+
+
+<p>オシレーターの体験ツールでは、それぞれの波の音の違いや、組み合わせでどのような音になるのか体験してみよう。</p>
+<p onclick="location.href='oscillator.html'" style="cursor: pointer;">
+   オシレーター体験へ
+</p>
+</div>
+
+</body>
+</html>

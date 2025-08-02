@@ -1,0 +1,395 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ADSR体験</title>
+<link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      
+    }
+   table {
+    border-collapse: collapse;
+    margin: 20px auto; /* ← テーブル全体を中央表示 */
+    width: 80%;
+  }
+    th, td {
+    border: 1px solid #666;
+    padding: 10px;
+    text-align: center;       /* ← 横方向中央揃え */
+    vertical-align: middle;   /* ← 縦方向中央揃え */
+  }
+	{
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      
+      font-family: "Segoe UI", sans-serif;
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      width: 1000px;
+      height: 200px;
+      background: black;
+      transition: none;
+      border: 1px solid #aaa;
+    }
+
+    .controls {
+      text-align: center;
+    }
+
+    .top-right {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    #adsrInfoBtn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #adsrInfo {
+      text-align: center;
+      font-family: monospace;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+</head>
+<body>
+<!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+  <h1>ADSR体験</h1>
+
+  <div class="top-right">
+    <label for="soundType">音色:</label>
+    <select id="soundType">
+      <option value="futuristic">近未来的な音</option>
+      <option value="classic">クラシックシンセ</option>
+      <option value="bright">明るい音</option>
+      <option value="retro">レトロゲーム音</option>
+      <option value="pad">シンセパッド</option>
+      <option value="bass">ベースサウンド</option>
+      <option value="lead">リードサウンド</option>
+      <option value="organ">オルガン風</option>
+      <option value="plucked">プラック音</option>
+      <option value="soft">柔らかい音</option>
+    </select>
+  </div>
+
+  <canvas id="adsrCanvas" width="1000" height="200"></canvas>
+
+  <button id="adsrInfoBtn">ADSR情報を見る</button>
+  <div id="adsrInfo"></div>
+
+  <script>
+    const canvas = document.getElementById("adsrCanvas");
+    const ctx = canvas.getContext("2d");
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let points = [
+      { x: 0, y: canvas.height },
+      { x: 200, y: 20 },
+      { x: 400, y: 100 },
+      { x: 700, y: 100 },
+      { x: 900, y: canvas.height }
+    ];
+
+    let draggingPoint = null;
+    let wasDragged = false;
+    let currentOscillator = null;
+    let currentLFO = null;
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", (e) => {
+  if (draggingPoint !== null) {
+    if (wasDragged) {
+      stopCurrentSound();
+      playEnvelopeFromGraph();
+    }
+    draggingPoint = null;
+    wasDragged = false;
+  }
+});
+
+
+function stopCurrentSound() {
+  if (currentOscillator) {
+    try {
+      currentOscillator.stop();
+    } catch (e) {}
+    currentOscillator.disconnect();
+    currentOscillator = null;
+  }
+  if (currentLFO) {
+    try {
+      currentLFO.stop();
+    } catch (e) {}
+    currentLFO.disconnect();
+    currentLFO = null;
+  }
+}
+
+
+
+
+
+
+
+
+function onPointerDown(e) {
+  // ここで再開（スマホ対応）
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  const pos = getMousePos(e);
+  for (let i = 1; i < points.length; i++) {
+    const dx = pos.x - points[i].x;
+    const dy = pos.y - points[i].y;
+    if (dx * dx + dy * dy < 100) {
+      draggingPoint = i;
+      wasDragged = false;
+      break;
+    }
+  }
+}
+
+
+
+
+    function getGraphColor(soundType) {
+  const colorMap = {
+    futuristic: "#00ccff",
+    classic: "#ffcc00",
+    bright: "#66ff66",
+    retro: "#ff6699",
+    pad: "#ccccff",
+    bass: "#ff884d",
+    lead: "#ff4444",
+    organ: "#66ffff",
+    plucked: "#ffff66",
+    soft: "#eeeeee"
+  };
+  return colorMap[soundType] || "#00ccff"; // デフォルト色
+}
+
+    function onPointerMove(e) {
+      if (draggingPoint === null) return;
+      wasDragged = true;
+      const pos = getMousePos(e);
+      const minX = draggingPoint > 0 ? points[draggingPoint - 1].x + 10 : 0;
+      const maxX = draggingPoint < points.length - 1 ? points[draggingPoint + 1].x - 10 : canvas.width;
+      points[draggingPoint].x = Math.max(minX, Math.min(maxX, pos.x));
+
+      if (draggingPoint === 2 || draggingPoint === 3) {
+        const newY = Math.max(0, Math.min(canvas.height, pos.y));
+        points[draggingPoint].y = newY;
+        if (draggingPoint === 3) points[2].y = newY;
+        if (draggingPoint === 2) points[3].y = newY;
+      }
+
+      drawADSR();
+    }
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+
+    function drawADSR() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 現在の音色に応じた色を取得
+  const soundType = document.getElementById("soundType").value;
+  const graphColor = getGraphColor(soundType);
+
+  // 縦線（白）
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < points.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(points[i].x, 0);
+    ctx.lineTo(points[i].x, canvas.height);
+    ctx.stroke();
+  }
+
+  // ADSRライン
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.strokeStyle = graphColor;
+  ctx.lineWidth = 3;
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = graphColor;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // ポイント描画（そのまま）
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.arc(points[i].x, points[i].y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#ff3366";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+  }
+
+  // ラベルと軸ラベル（そのまま）
+  ctx.fillStyle = "white";
+  ctx.font = "14px sans-serif";
+  ctx.fillText("A", points[1].x - 10, 20);
+  ctx.fillText("D", points[2].x - 10, 20);
+  ctx.fillText("S", points[3].x - 10, 20);
+  ctx.fillText("R", points[4].x - 10, 20);
+
+  ctx.save();
+  ctx.translate(20, canvas.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center";
+  ctx.fillText("音量", 0, 0);
+  ctx.restore();
+  ctx.fillText("時間", canvas.width - 50, canvas.height - 10);
+}
+
+
+    function getADSRFromGraph() {
+      const unitTime = 0.005;
+      const height = canvas.height;
+      const a = (points[1].x - points[0].x) * unitTime;
+      const d = (points[2].x - points[1].x) * unitTime;
+      const s = 1 - (points[2].y / height);
+      const sustainDuration = (points[3].x - points[2].x) * unitTime;
+      const r = (points[4].x - points[3].x) * unitTime;
+      return { a, d, s, sustainDuration, r };
+    }
+
+    function playEnvelopeFromGraph() {
+      stopCurrentSound();
+      const { a, d, s, sustainDuration, r } = getADSRFromGraph();
+      const now = audioCtx.currentTime;
+      const soundType = document.getElementById("soundType").value;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.connect(audioCtx.destination);
+
+      const osc = audioCtx.createOscillator();
+      let lfo = null;
+      let lfoGain = null;
+
+      if (soundType === "futuristic") {
+        osc.type = "sawtooth";
+        lfo = audioCtx.createOscillator();
+        lfo.frequency.setValueAtTime(12, now);
+        lfoGain = audioCtx.createGain();
+        lfoGain.gain.setValueAtTime(40, now);
+        lfo.connect(lfoGain).connect(osc.detune);
+        lfo.start(now);
+        lfo.stop(now + a + d + sustainDuration + r);
+      } else {
+        osc.type = {
+          classic: "square",
+          bright: "triangle",
+          retro: "square",
+          pad: "sine",
+          bass: "sawtooth",
+          lead: "sawtooth",
+          organ: "triangle",
+          plucked: "square",
+          soft: "sine"
+        }[soundType] || "sine";
+      }
+
+      osc.connect(gain);
+      osc.start(now);
+      osc.stop(now + a + d + sustainDuration + r);
+      gain.gain.linearRampToValueAtTime(0.3, now + a);
+      gain.gain.linearRampToValueAtTime(s * 0.3, now + a + d);
+      gain.gain.setValueAtTime(s * 0.3, now + a + d + sustainDuration);
+      gain.gain.linearRampToValueAtTime(0, now + a + d + sustainDuration + r);
+
+      currentOscillator = osc;
+      currentLFO = lfo;
+    }
+
+    // $2705 ADSR情報ボタン機能
+    document.getElementById("adsrInfoBtn").addEventListener("click", () => {
+  const { a, d, s, sustainDuration, r } = getADSRFromGraph();
+  document.getElementById("adsrInfo").innerHTML =
+    `アタック：${a.toFixed(3)} 秒<br>` +
+    `ディケイ：${d.toFixed(3)} 秒<br>` +
+    `サステイン：${(s * 100).toFixed(1)} %<br>` +
+    `サステイン時間：${sustainDuration.toFixed(3)} 秒<br>` +
+    `リリース：${r.toFixed(3)} 秒`;
+});
+
+document.getElementById("soundType").addEventListener("change", () => {
+  drawADSR();
+});
+
+    drawADSR();
+
+    // スマホ操作でもスクロールさせない
+canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+
+// pointerupをcanvasとwindow両方で受け取る
+canvas.addEventListener("pointerup", onPointerUp);
+window.addEventListener("pointerup", onPointerUp);
+
+function onPointerUp(e) {
+  if (draggingPoint !== null) {
+    if (wasDragged) {
+      stopCurrentSound();
+      playEnvelopeFromGraph();
+    }
+    draggingPoint = null;
+    wasDragged = false;
+  }
+}
+
+  </script>
+</body>
+</html>

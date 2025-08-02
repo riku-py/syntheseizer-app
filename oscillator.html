@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>オシレーター体験</title>
+<link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      
+    }
+
+    .oscillator {
+      display: inline-block;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px;
+      background: #fff;
+      border-radius: 10px;
+    }
+
+    .pad {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      border: 2px solid #444;
+      background: #eee;
+      margin: 10px auto;
+      touch-action: none;
+    }
+
+    .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: red;
+      position: absolute;
+      top: 90px;
+      left: 90px;
+    }
+
+    select, input[type="number"] {
+      margin: 4px;
+    }
+
+    h2 {
+      border-bottom: 2px solid #333;
+      display: inline-block;
+      padding: 5px 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+
+  <h2>オシレーター体験</h2>
+  <p>すべての波の元々の音の高さはC4（ド4）に固定</p>
+
+  <div id="oscillators">
+    
+  <!-- オシレーター1 -->
+  <div class="oscillator" id="osc1">
+    <div class="pad" data-index="0">
+      <div class="dot"></div>
+    </div>
+    <select class="waveform">
+      <option value="sine">サイン波</option>
+      <option value="triangle">三角波</option>
+      <option value="sawtooth">ノコギリ波</option>
+      <option value="square">矩形波</option>
+    </select><br>
+    <p style="color: black;">±5Hz: <input type="number" class="freqOffset" value="0" min="-5" max="5"><br>
+    ±1オクターブ: <input type="number" class="octaveOffset" value="0" min="-1" max="1"><br></p>
+    <button class="toggleBtn">OFF</button>
+  </div>
+
+  <!-- オシレーター2・3も同様に toggleBtn 追加 -->
+  <div class="oscillator" id="osc2">
+    <div class="pad" data-index="1">
+      <div class="dot"></div>
+    </div>
+    <select class="waveform">
+      <option value="sine">サイン波</option>
+      <option value="triangle">三角波</option>
+      <option value="sawtooth">ノコギリ波</option>
+      <option value="square">矩形波</option>
+    </select><br>
+    <p style="color: black;">±5Hz: <input type="number" class="freqOffset" value="0" min="-5" max="5"><br>
+    ±1オクターブ: <input type="number" class="octaveOffset" value="0" min="-1" max="1"><br><p>
+    <button class="toggleBtn">OFF</button>
+  </div>
+
+  <div class="oscillator" id="osc3">
+    <div class="pad" data-index="2">
+      <div class="dot"></div>
+    </div>
+    <select class="waveform">
+      <option value="sine">サイン波</option>
+      <option value="triangle">三角波</option>
+      <option value="sawtooth">ノコギリ波</option>
+      <option value="square">矩形波</option>
+    </select><br>
+    <p style="color: black;">±5Hz: <input type="number" class="freqOffset" value="0" min="-5" max="5"><br>
+    ±1オクターブ: <input type="number" class="octaveOffset" value="0" min="-1" max="1"><br></p>
+    <button class="toggleBtn">OFF</button>
+  </div>
+</div>
+
+   
+
+  <h3>全体コントロール（3オシレーター同時制御）</h3>
+  <p>横軸：音量｜縦軸：±1オクターブ</p>
+  <div class="pad" id="globalPad">
+    <div class="dot"></div>
+  </div>
+
+  <script>
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+const baseFreq = 261.63; // C4
+const oscData = [];
+
+// 初期化
+document.querySelectorAll('.oscillator').forEach((el, i) => {
+  const toggleBtn = el.querySelector('.toggleBtn');
+  oscData[i] = {
+    oscillator: null,
+    gainNode: null,
+    waveform: el.querySelector('.waveform'),
+    freqOffset: el.querySelector('.freqOffset'),
+    octaveOffset: el.querySelector('.octaveOffset'),
+    dot: el.querySelector('.dot'),
+    volume: 0.5,
+    pitchRatio: 1,
+    isOn: false,
+    toggleBtn: toggleBtn
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    oscData[i].isOn = !oscData[i].isOn;
+    toggleBtn.textContent = oscData[i].isOn ? "ON" : "OFF";
+    if (!oscData[i].isOn) stopOscillator(i);
+  });
+});
+
+function getFrequency(i) {
+  const offset = Number(oscData[i].freqOffset.value);
+  const oct = Math.pow(2, Number(oscData[i].octaveOffset.value));
+  return (baseFreq + offset) * oct * oscData[i].pitchRatio;
+}
+
+function updateOscillator(i) {
+  const data = oscData[i];
+  if (!data.isOn) return;
+
+  const wave = data.waveform.value;
+  if (!data.oscillator) {
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = wave;
+    osc.frequency.value = getFrequency(i);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    osc.connect(gain).connect(context.destination);
+    osc.start();
+
+    data.oscillator = osc;
+    data.gainNode = gain;
+  }
+
+  data.oscillator.frequency.setValueAtTime(getFrequency(i), context.currentTime);
+  data.gainNode.gain.linearRampToValueAtTime(data.volume, context.currentTime + 0.05);
+}
+
+function stopOscillator(i) {
+  const data = oscData[i];
+  if (data.oscillator) {
+    data.gainNode.gain.linearRampToValueAtTime(0.0001, context.currentTime + 0.1);
+    setTimeout(() => {
+      data.oscillator.stop();
+      data.oscillator.disconnect();
+      data.gainNode.disconnect();
+      data.oscillator = null;
+    }, 200);
+  }
+}
+
+function handlePad(pad, index, e) {
+  const rect = pad.getBoundingClientRect();
+  let x = e.clientX - rect.left;
+  let y = e.clientY - rect.top;
+  x = Math.max(0, Math.min(x, rect.width));
+  y = Math.max(0, Math.min(y, rect.height));
+
+  const volume = x / rect.width;
+  const pitchRatio = Math.pow(2, (1 - y / rect.height - 0.5) * 2); // ±1octave
+
+  const dot = pad.querySelector('.dot');
+  dot.style.left = `${x - 10}px`;
+  dot.style.top = `${y - 10}px`;
+
+  oscData[index].volume = volume;
+  oscData[index].pitchRatio = pitchRatio;
+  updateOscillator(index);
+}
+
+// パッド操作イベント
+document.querySelectorAll('.pad').forEach((pad) => {
+  if (pad.id === "globalPad") return;
+  const index = parseInt(pad.dataset.index);
+  let isDragging = false;
+
+  pad.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    handlePad(pad, index, e);
+  });
+
+  pad.addEventListener('pointermove', (e) => {
+    if (isDragging) handlePad(pad, index, e);
+  });
+
+  pad.addEventListener('pointerup', () => {
+    isDragging = false;
+    stopOscillator(index);
+  });
+
+  pad.addEventListener('pointerleave', () => {
+    isDragging = false;
+    stopOscillator(index);
+  });
+});
+
+
+    // グローバルパッド制御（3つ同時）
+    (() => {
+      const pad = document.getElementById("globalPad");
+      const dot = pad.querySelector('.dot');
+      let dragging = false;
+
+      pad.addEventListener('pointerdown', e => {
+        dragging = true;
+        handleGlobal(e);
+      });
+
+      pad.addEventListener('pointermove', e => {
+        if (dragging) handleGlobal(e);
+      });
+
+      pad.addEventListener('pointerup', () => {
+        dragging = false;
+        oscData.forEach((_, i) => stopOscillator(i));
+      });
+
+      pad.addEventListener('pointerleave', () => {
+        dragging = false;
+        oscData.forEach((_, i) => stopOscillator(i));
+      });
+
+      function handleGlobal(e) {
+        const rect = pad.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+        x = Math.max(0, Math.min(x, rect.width));
+        y = Math.max(0, Math.min(y, rect.height));
+
+        dot.style.left = `${x - 10}px`;
+        dot.style.top = `${y - 10}px`;
+
+        const volume = x / rect.width;
+        const pitchRatio = Math.pow(2, (1 - y / rect.height - 0.5) * 2); // ±1oct
+
+        oscData.forEach((data, i) => {
+          data.volume = volume;
+          data.pitchRatio = pitchRatio;
+          updateOscillator(i);
+        });
+      }
+    })();
+
+    // 波形など変更で即時反映
+    document.querySelectorAll('.waveform, .freqOffset, .octaveOffset').forEach(input => {
+      input.addEventListener('change', () => {
+        oscData.forEach((_, i) => {
+          if (oscData[i].oscillator) updateOscillator(i);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

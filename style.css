@@ -1,0 +1,154 @@
+/* 全体の背景と文字色 */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #111;
+  margin: 0;
+  padding: 20px;
+  color: #eee;
+}
+
+/* セクション全体のスタイル */
+.section {
+  background: #1e1e1e;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 見出し */
+h1, h2, h3, h4 {
+  color: #fff;
+}
+
+/* ボタン */
+button {
+  margin: 5px;
+  padding: 10px 18px;
+  border: none;
+  background: #3f51b5;
+  color: white;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+button:hover {
+  background: #5c6bc0;
+}
+
+/* セレクトやスライダー */
+select, input[type=range], input[type=number] {
+  margin: 4px;
+}
+
+/* スライダーグループ */
+.slider-group {
+  margin-bottom: 10px;
+}
+
+/* トグルヘッダー */
+.toggle-header {
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+  padding: 5px;
+  background: #334;
+  border-radius: 5px;
+}
+.toggle-header:hover {
+  background: #445;
+}
+.section-content {
+  margin-top: 10px;
+  display: none;
+}
+.section-content.open {
+  display: block;
+}
+
+/* キーボード本体 */
+#keyboard {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+  height: 160px;
+}
+
+/* 白鍵 */
+.white-key {
+  width: 32px;
+  height: 160px;
+  background: white;
+  border: 1px solid #999;
+  box-sizing: border-box;
+  z-index: 1;
+  position: relative;
+  display: inline-block;
+}
+
+/* 黒鍵 */
+.black-key {
+  width: 20px;
+  height: 100px;
+  background: black;
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* 波形オシロスコープ */
+#oscilloscope {
+  display: block;
+  margin: 20px auto 0 auto;
+  border: 1px solid #aaa;
+  background: black;
+  width: 600px;
+  height: 100px;
+}
+
+
+/* クイズ用波形画像 */
+#quizImage img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.white-key.active {
+  background: #88c0d0; /* 好きな色に調整可能 */
+}
+
+.black-key.active {
+  background: #4fc3f7; /* 黒鍵用の色 */
+}
+
+.adsr-layout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start; /* これで左寄せ */
+  gap: 16px; /* スライダーとグラフの間の適度な余白 */
+}
+
+
+.adsr-sliders {
+  flex: 1;
+  min-width: 200px;
+}
+
+
+.adsr-graph-box {
+  border: 1px solid #666;
+  padding: 8px;
+  border-radius: 8px;
+  background: #222;
+  margin: 0;            /* 不要な外側余白を除去 */
+  flex-shrink: 0;
+}
+
+
+
+
+

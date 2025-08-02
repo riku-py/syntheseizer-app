@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>トップページ</title>
+  <link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+<style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      
+    }
+   table {
+    border-collapse: collapse;
+    margin: 20px auto; /* ← テーブル全体を中央表示 */
+    width: 80%;
+  }
+    th, td {
+    border: 1px solid #666;
+    padding: 10px;
+    text-align: center;       /* ← 横方向中央揃え */
+    vertical-align: middle;   /* ← 縦方向中央揃え */
+  }
+</style>
+</head>
+<body>
+
+  <!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div style="margin-left:240px; padding:20px;">
+<h1>ADSRエンベロープについて </h1>
+<p>ADSRエンベロープとは、音を時間的に変化させるものです。 ADSRそれぞれに意味があります。 </p>
+<p>①A(アタックタイム) 
+②D(ディケイタイム) 
+③S(サステインレベル) 
+④R(リリースタイム) 
+</p>
+<p><h2>A(アタックタイム)</h2>これは音が鳴り始めてから、最高音に達するまでの時間のことです。</br></br>
+ <h2>D(ディケイタイム)</h2>これは音が最高音になってから、S(サステインレベル)の音量まで小さくなるまでの時間のことをいいます。 </br>
+<h2>S(サステインレベル)</h2>
+ADRはそれぞれ時間を表しますが、S(サステインレベル)は、時間でなく音量を表すということに注意が必要です。 </br></br>
+<h2>R(リリースタイム)</h2>これはS(サステインレベル)から、音が完全に消えるまでの時間のことです。 </br></br>
+例えば、ピアノを想像してみてください。 鍵盤から指を離しても、完全に音が消えるまで音が鳴っている時間があります。 それがR(リリースタイム)です。 
+</p>
+<img src="ADSR.png">
+<p>シンセサイザでは、これらのパラメータを自由自在に操り、独自の音作りを楽しむことが可能です。 
+ADSRエンベロープ体験では、これらのパラメータを自由自在にグラフ上で動かし、音色の違いを体験することができます。</br>
+ 自分好みの音色を探してみよう。</p>
+<p>ADSRエンベロープ体験へ</p>
+</div>
+
+</body>
+</html>

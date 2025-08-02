@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+  <title>シンセサイザー</title>
+  <link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+</head>
+<body>
+  <!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+  <h1>　　シンセサイザー</h1>
+<div class="section">
+  <h2>ADSRエンベロープ</h2>
+  <div class="adsr-layout">
+    <div class="adsr-sliders">
+      <div class="slider-group">A:<input type="range" id="attack" min="0" max="2" step="0.01" value="0.1"><span id="attackVal">0.10</span></div>
+      <div class="slider-group">D:<input type="range" id="decay" min="0" max="2" step="0.01" value="0.1"><span id="decayVal">0.10</span></div>
+      <div class="slider-group">S:<input type="range" id="sustain" min="0" max="1" step="0.01" value="0.7"><span id="sustainVal">0.70</span></div>
+      <div class="slider-group">R:<input type="range" id="release" min="0" max="2" step="0.01" value="0.5"><span id="releaseVal">0.50</span></div>
+    </div>
+  <div class="adsr-graph-box">
+    <canvas id="adsrCanvas" width="400" height="100"></canvas>
+  </div>
+</div>
+
+<div class="section">
+  <h2>オシレーター設定</h2>
+  <div id="controls"></div>
+</div>
+
+<div class="section">
+  <h2>フィルター</h2>
+    <select id="filterType">
+      <option value="lowpass">ローパス</option>
+      <option value="highpass">ハイパス</option>
+      <option value="bandpass">バンドパス</option>
+    </select>
+    Cutoff:
+    <input type="range" id="cutoff" min="100" max="10000" value="1000" oninput="document.getElementById('cutoffVal').innerText = this.value">
+    <span id="cutoffVal">1000</span>
+  </div>
+</div>
+
+  
+  <div class="section">
+    <h2>ノイズ</h2>
+    <select id="noiseType">
+      <option value="none">なし</option>
+      <option value="white">ホワイトノイズ</option>
+      <option value="pink">ピンクノイズ</option>
+    </select>
+    音量:
+    <input type="range" id="noiseGain" min="0" max="1" step="0.01" value="0.2">
+  </div>
+
+  
+
+  <div class="section">
+  <h2>鍵盤</h2>
+  <div id="keyboard"></div>
+</div>
+
+<!-- 波形を鍵盤の真下中央に配置 -->
+<canvas id="oscilloscope"></canvas>
+<div style="text-align:center; margin-top:10px;">
+  <label><input type="checkbox" id="toggleScope" checked> 波形を表示する</label>
+</div>
+
+<!-- <h2>シンセサイザークイズ $D83C$DFB9</h2>
+  <div id="quizContainer">
+    <p id="quizImage" style="text-align:center;"></p>
+    <p id="quizQuestion"></p>
+    <div id="quizChoices"></div>
+    <p id="quizFeedback"></p>
+    <p id="quizResult"></p>
+    <p id="quizHint" style="margin-top:10px;"></p>
+  </div>
+-->
+
+
+  
+
+
+<div class="section">
+    <h3 class="toggle-header">▲プリセット</h3>
+    <div class="section-content">
+      <button onclick="loadPreset('bass')">ベース</button>
+      <button onclick="loadPreset('lead')">リード</button>
+    </div>
+  </div>
+
+<div class="section">
+  <h3 class="toggle-header">▲波形について</h3>
+  <div class="section-content">
+    <p><strong>正弦波(サイン波):</strong> 柔らかく、優しい音。ベースや、深みを出すのに有効。</p>
+    <p><strong>三角波:</strong> 正弦波に近いが少し明るい音。</p>
+    <p><strong>ノコギリ波:</strong> 最も明るく、存在感のある音。いかにもシンセサイザーの音。</p>
+    <p><strong>矩形波:</strong> パルス的で、はっきりした音。ゲーム音などに有効。</p>
+  </div>
+</div>
+
+
+<div class="section">
+  <h3 class="toggle-header">▲フィルターについて</h3>
+  <div class="section-content">
+    <p><strong>ローパスフィルター:</strong> 低域周波成分を通して、高域周波成分をカットするフィルター</p>
+    <p><strong>バンドパスフィルター:</strong> 中域周波成分だけを通すフィルター</p>
+    <p><strong>ハイパスフィルター:</strong> 高域周波成分を通して、低域周波成分をカットするフィルター</p>
+  </div>
+</div>
+
+
+<div class="section">
+  <h3 class="toggle-header">▲ADSRエンベロープについて</h3>
+  <div class="section-content">
+    <p><strong>Attack:</strong> 音が鳴り始めてから最大音量になるまでの時間</p>
+    <p><strong>Decay:</strong> 最大音量からSustainの音量に下がるまでの時間</p>
+    <p><strong>Sustain:</strong> 音を押し続けている間に保たれる音量</p>
+    <p><strong>Release:</strong> 鍵を離してから音が完全に消えるまでの時間</p>
+  </div>
+</div>
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    const scope = document.getElementById("oscilloscope");
+    const scopeCtx = scope.getContext("2d");
+    const adsrCanvas = document.getElementById("adsrCanvas");
+    const adsrCtx = adsrCanvas.getContext("2d");
+
+    const attack = document.getElementById("attack");
+    const decay = document.getElementById("decay");
+    const sustain = document.getElementById("sustain");
+    const release = document.getElementById("release");
+    let activeTouchKey = null; // スマホで今押してる鍵
+
+
+    function drawADSR() {
+  adsrCtx.clearRect(0, 0, adsrCanvas.width, adsrCanvas.height);
+  adsrCtx.strokeStyle = "#00f";
+  adsrCtx.lineWidth = 2;
+
+  const a = parseFloat(attack.value);
+  const d = parseFloat(decay.value);
+  const s = parseFloat(sustain.value);
+  const r = parseFloat(release.value);
+
+  const totalTime = a + d + r + 1; // サステインを1秒固定で可視化
+  const scaleX = adsrCanvas.width / totalTime;
+
+  // 値表示更新
+  document.getElementById("attackVal").innerText = a.toFixed(2);
+  document.getElementById("decayVal").innerText = d.toFixed(2);
+  document.getElementById("sustainVal").innerText = s.toFixed(2);
+  document.getElementById("releaseVal").innerText = r.toFixed(2);
+
+  adsrCtx.beginPath();
+  adsrCtx.moveTo(0, 100);
+  adsrCtx.lineTo(a * scaleX, 0);                            // Attack
+  adsrCtx.lineTo((a + d) * scaleX, 100 - s * 100);          // Decay
+  adsrCtx.lineTo((a + d + 1) * scaleX, 100 - s * 100);      // Sustain (1s)
+  adsrCtx.lineTo((a + d + 1 + r) * scaleX, 100);            // Release
+  adsrCtx.stroke();
+}
+drawADSR();
+['attack', 'decay', 'sustain', 'release'].forEach(id =>
+  document.getElementById(id).addEventListener("input", drawADSR)
+);
+
+
+    function createOscillatorControls(i) {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <h4>オシレーター${i + 1}</h4>
+        波形:<select id="wave${i}">
+          <option value="sine">正弦波</option>
+          <option value="triangle">三角波</option>
+          <option value="square">矩形波</option>
+          <option value="sawtooth">ノコギリ波</option>
+        </select>
+        音量:<input type="range" id="gain${i}" min="0" max="1" step="0.01" value="0.3"
+        oninput="document.getElementById('gainVal${i}').innerText = this.value">
+        <span id="gainVal${i}">0.3</span>
+
+        ±5Hz:<input type="number" id="detune${i}" min="-5" max="5" step="0.1" value="0">
+        オクターブ:<select id="octave${i}">
+          <option value="0">0</option>
+          <option value="-1">-1</option>
+          <option value="1">+1</option>
+        </select>
+      `;
+      document.getElementById("controls").appendChild(div);
+    }
+
+    for (let i = 0; i < 3; i++) createOscillatorControls(i);
+
+const keyboard = document.getElementById("keyboard");
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12); // A4 = MIDI 69 = 440Hz
+}
+
+function isBlackKey(midi) {
+  const noteInOctave = midi % 12;
+  return [1, 3, 6, 8, 10].includes(noteInOctave); // C#, D#, F#, G#, A#
+}
+
+
+keyboard.innerHTML = "";
+let whiteKeyCount = 0;
+for (let midi = 48; midi <= 105; midi++) {
+
+  const freq = midiToFreq(midi);
+  const key = document.createElement("div");
+
+  if (isBlackKey(midi)) {
+    key.classList.add("black-key");
+    // 黒鍵の位置：直前の白鍵の中央に重ねる
+    key.style.left = `${whiteKeyCount * 32 - 10}px`;
+  } else {
+    key.classList.add("white-key");
+    whiteKeyCount++;
+  }
+
+  addNoteEventListeners(key, freq);
+  keyboard.appendChild(key);
+}
+
+
+
+  
+
+
+function addNoteEventListeners(elem, freq) {
+  // PC用
+  elem.addEventListener("mousedown", () => {
+    startNote(freq);
+    elem.classList.add("active");
+  });
+  elem.addEventListener("mouseup", () => {
+    stopNote(freq);
+    elem.classList.remove("active");
+  });
+  elem.addEventListener("mouseleave", () => {
+    stopNote(freq);
+    elem.classList.remove("active");
+  });
+
+  // スマホ用
+  elem.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    if (activeTouchKey !== elem) {
+      startNote(freq);
+      elem.classList.add("active");
+      activeTouchKey = elem;
+    }
+  }, { passive: false });
+
+  elem.addEventListener("touchend", () => {
+    stopNote(freq);
+    elem.classList.remove("active");
+    activeTouchKey = null;
+  });
+}
+
+
+
+    const activeNotes = new Map();
+
+function startNote(baseFreq) {
+  const now = audioCtx.currentTime;
+  const a = parseFloat(attack.value);
+  const d = parseFloat(decay.value);
+  const s = parseFloat(sustain.value);
+
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(1, now + a);
+  masterGain.gain.linearRampToValueAtTime(s, now + a + d);
+  masterGain.connect(audioCtx.destination);
+  masterGain.connect(analyser);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = filterType.value;
+  filter.frequency.value = parseFloat(cutoff.value);
+  filter.connect(masterGain);
+
+  const oscillators = [];
+  for (let i = 0; i < 3; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = document.getElementById(`wave${i}`).value;
+    const detune = parseFloat(document.getElementById(`detune${i}`).value);
+    const octave = parseInt(document.getElementById(`octave${i}`).value);
+    osc.frequency.value = baseFreq * Math.pow(2, octave) + detune;
+    gain.gain.value = parseFloat(document.getElementById(`gain${i}`).value);
+    osc.connect(gain);
+    gain.connect(filter);
+    osc.start(now);
+    oscillators.push({ osc, gain });
+  }
+
+  // ノイズ
+  const noiseType = document.getElementById("noiseType").value;
+  const noiseGainValue = parseFloat(document.getElementById("noiseGain").value);
+  let noiseSource = null;
+  if (noiseType !== "none") {
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      data[i] = noiseType === "white"
+        ? white
+        : (b0 = 0.99886 * b0 + white * 0.0555179,
+          b1 = 0.99332 * b1 + white * 0.0750759,
+          b2 = 0.96900 * b2 + white * 0.1538520,
+          b3 = 0.86650 * b3 + white * 0.3104856,
+          b4 = 0.55000 * b4 + white * 0.5329522,
+          b5 = -0.7616 * b5 - white * 0.0168980,
+          b6 = white * 0.115926,
+          (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11);
+    }
+
+    noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = buffer;
+    noiseSource.loop = true;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = noiseGainValue;
+    noiseSource.connect(noiseGain).connect(filter);
+    noiseSource.start(now);
+  }
+
+  activeNotes.set(baseFreq, { oscillators, masterGain, noiseSource });
+  visualize();
+}
+
+function playNoteWithSettings(freq, settings) {
+  const now = audioCtx.currentTime;
+  const a = settings.attack;
+  const d = settings.decay;
+  const s = settings.sustain;
+  const r = settings.release;
+
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(1, now + a);
+  masterGain.gain.linearRampToValueAtTime(s, now + a + d);
+  masterGain.gain.linearRampToValueAtTime(0, now + a + d + 0.5 + r);
+  masterGain.connect(audioCtx.destination);
+  masterGain.connect(analyser);
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = settings.filterType;
+  filter.frequency.value = settings.cutoff;
+  filter.connect(masterGain);
+
+  for (let i = 0; i < 3; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = settings.waves[i];
+    const detune = settings.detunes[i];
+    const octave = settings.octaves[i];
+    osc.frequency.value = freq * Math.pow(2, octave) + detune;
+    gain.gain.value = settings.gains[i];
+    osc.connect(gain);
+    gain.connect(filter);
+    osc.start(now);
+    osc.stop(now + a + d + 0.5 + r);
+  }
+
+  visualize();
+}
+
+
+function stopNote(baseFreq = null) {
+  const r = parseFloat(release.value);
+  const now = audioCtx.currentTime;
+
+  if (baseFreq !== null) {
+    const note = activeNotes.get(baseFreq);
+    if (note) {
+      fadeOutNote(note, now, r);
+      activeNotes.delete(baseFreq);
+    }
+  } else {
+    // 引数なしの場合、すべての音を止める（スマホのtouchend用）
+    for (const [freq, note] of activeNotes.entries()) {
+      fadeOutNote(note, now, r);
+      activeNotes.delete(freq);
+    }
+  }
+}
+
+function fadeOutNote(note, now, r) {
+  note.masterGain.gain.cancelScheduledValues(now);
+  note.masterGain.gain.setValueAtTime(note.masterGain.gain.value, now);
+  note.masterGain.gain.linearRampToValueAtTime(0, now + r);
+
+  note.oscillators.forEach(({ osc }) => {
+    try { osc.stop(now + r + 0.05); } catch (e) {}
+  });
+
+  if (note.noiseSource) {
+    try { note.noiseSource.stop(now + r + 0.05); } catch (e) {}
+  }
+}
+
+
+
+
+    function loadPreset(name) {
+      if (name === "bass") {
+        wave0.value = "square"; wave1.value = "square"; wave2.value = "sine";
+        gain0.value = 0.5; document.getElementById("gainVal0").innerText = "0.5";
+        gain1.value = 0.5; document.getElementById("gainVal1").innerText = "0.5";
+        gain2.value = 0.2; document.getElementById("gainVal2").innerText = "0.2";
+        attack.value = 0.05; decay.value = 0.1; sustain.value = 0.6; release.value = 0.3;
+        filterType.value = "lowpass"; cutoff.value = 800;
+      } else if (name === "lead") {
+        wave0.value = "sawtooth"; wave1.value = "sawtooth"; wave2.value = "triangle";
+        gain0.value = 0.5; document.getElementById("gainVal0").innerText = "0.5";
+        gain1.value = 0.5; document.getElementById("gainVal1").innerText = "0.5";
+        gain2.value = 0.2; document.getElementById("gainVal2").innerText = "0.2";
+        attack.value = 0.05; decay.value = 0.2; sustain.value = 0.8; release.value = 0.2;
+        filterType.value = "bandpass"; cutoff.value = 1500;
+      }
+      drawADSR();
+    }
+
+    // 開閉式のヘッダー制御（修正済み）
+    document.querySelectorAll('.toggle-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const open = content.classList.toggle('open');
+        header.textContent = (open ? '▼' : '▲') + header.textContent.slice(1);
+      });
+    });
+
+    
+
+    let animationId = null;
+
+function visualize() {
+  analyser.fftSize = 2048;
+  const bufferLength = analyser.fftSize;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw() {
+    // チェックが外れていたら描画停止
+    if (!document.getElementById("toggleScope").checked) {
+      scopeCtx.clearRect(0, 0, scope.width, scope.height);
+      return;
+    }
+
+    animationId = requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(dataArray);
+    scopeCtx.fillStyle = "black";
+    scopeCtx.fillRect(0, 0, scope.width, scope.height);
+    scopeCtx.lineWidth = 2;
+    scopeCtx.strokeStyle = "lime";
+    scopeCtx.beginPath();
+    const sliceWidth = scope.width / bufferLength;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = v * scope.height / 2;
+      i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    scopeCtx.lineTo(scope.width, scope.height / 2);
+    scopeCtx.stroke();
+  }
+
+  if (animationId) cancelAnimationFrame(animationId);
+  draw();
+}
+
+
+
+/*
+    const quizSamples = [
+      {
+        waves: ['sawtooth', 'sawtooth', 'sawtooth'],
+        gains: [0.4, 0.4, 0.3],
+        detunes: [0, 0, 0],
+        octaves: [0, 0, 0],
+        attack: 0.05,
+        decay: 0.1,
+        sustain: 0.6,
+        release: 0.2,
+        filterType: 'lowpass',
+        cutoff: 1200,
+        hint: "ノコギリ波を使い、フィルターはローパス。ADSRは素早く鳴って少し長めに伸びます。",
+        answer: "波形=sawtooth×3、ゲイン=0.4,0.4,0.3、ADSR=0.05/0.1/0.6/0.2、フィルター=lowpass(1200Hz)"
+      },
+      {
+        waves: ['square', 'square', 'sine'],
+        gains: [0.5, 0.5, 0.2],
+        detunes: [0, 0, 0],
+        octaves: [-1, -1, 0],
+        attack: 0.02,
+        decay: 0.1,
+        sustain: 0.5,
+        release: 0.2,
+        filterType: 'lowpass',
+        cutoff: 800,
+        hint: "低音向け設定。矩形波で太い音を、サブにサイン波。",
+        answer: "波形=square,square,sine、ゲイン=0.5,0.5,0.2、ADSR=0.02/0.1/0.5/0.2、フィルター=lowpass(800Hz)"
+      },
+      {
+        waves: ['triangle', 'triangle', 'square'],
+        gains: [0.3, 0.3, 0.4],
+        detunes: [0, 0, 0],
+        octaves: [0, 0, 0],
+        attack: 0.1,
+        decay: 0.2,
+        sustain: 0.7,
+        release: 0.4,
+        filterType: 'bandpass',
+        cutoff: 1000,
+        hint: "落ち着いた音。三角波とバンドパスで中域を強調。",
+        answer: "波形=triangle,triangle,square、ゲイン=0.3,0.3,0.4、ADSR=0.1/0.2/0.7/0.4、フィルター=bandpass(1000Hz)"
+      }
+    ];
+
+    const quizData = [
+      {
+        type: "choice",
+        question: "ADSRにおいて『Attack』とは何ですか？",
+        choices: [
+          "音が鳴り始めてから最大音量になるまでの時間",
+          "音を押している間に維持される音量",
+          "鍵を離してから音が消えるまでの時間"
+        ],
+        correctIndex: 0
+      },
+      {
+        type: "choice",
+        question: "矩形波（square wave）の特徴として正しいものは？",
+        choices: [
+          "なめらかで柔らかい音",
+          "金属的で鋭い音",
+          "パルス的ではっきりした音"
+        ],
+        correctIndex: 2
+      },
+      {
+        type: "choice",
+        question: "高音だけを通したいときに使うフィルターは？",
+        choices: [
+          "ローパスフィルター",
+          "ハイパスフィルター",
+          "バンドパスフィルター"
+        ],
+        correctIndex: 1
+      },
+      {
+  type: "choice",
+  question: "この波形画像は何の種類の波でしょう？",
+  choices: [
+    "正弦波 (Sine)",
+    "三角波 (Triangle)",
+    "ノコギリ波 (Sawtooth)",
+    "矩形波 (Square)"
+  ],
+  correctIndex: 3,
+  image: "images/sine_wave.png"  
+      },
+
+      {
+        type: "synth",
+        sampleIndex: 0,
+        question: "次の音を聴いて、同じ音になるように設定してみましょう。"
+      },
+      {
+        type: "synth",
+        sampleIndex: 1,
+        question: "次の低音向けの音を再現してください。"
+      },
+      {
+        type: "synth",
+        sampleIndex: 2,
+        question: "最後の問題です。落ち着いた音を目指して設定してください。"
+      }
+    ];
+
+    let quizIndex = 0;
+
+    function playQuizSample(index) {
+      playNoteWithSettings(440, quizSamples[index]);
+    }
+
+    function settingsMatch(user, sample) {
+      return (
+        user.wave === sample.wave &&
+        Math.abs(user.gain - sample.gain) <= 0.15 &&
+        Math.abs(user.detune - sample.detune) <= 0.2
+        // オクターブは無視
+      );
+    }
+
+    function allOscillatorsMatch(userSettings, sampleSettings) {
+      const matched = new Array(sampleSettings.length).fill(false);
+      for (let u of userSettings) {
+        let found = false;
+        for (let i = 0; i < sampleSettings.length; i++) {
+          if (matched[i]) continue;
+          if (settingsMatch(u, sampleSettings[i])) {
+            matched[i] = true;
+            found = true;
+            break;
+          }
+        }
+        if (!found) return false;
+      }
+      return true;
+    }
+
+    function checkQuizAnswer(index) {
+      const sample = quizSamples[index];
+      let correct = true;
+
+      const userSettings = [];
+      for (let i = 0; i < 3; i++) {
+        userSettings.push({
+          wave: document.getElementById(`wave${i}`).value,
+          gain: parseFloat(document.getElementById(`gain${i}`).value),
+          detune: parseFloat(document.getElementById(`detune${i}`).value),
+          octave: parseInt(document.getElementById(`octave${i}`).value) // オクターブは記録だけ
+        });
+      }
+
+      const sampleSettings = sample.waves.map((wave, i) => ({
+        wave: wave,
+        gain: sample.gains[i],
+        detune: sample.detunes[i],
+        octave: sample.octaves[i]
+      }));
+
+      if (!allOscillatorsMatch(userSettings, sampleSettings)) correct = false;
+
+      if (Math.abs(parseFloat(attack.value) - sample.attack) > 0.3)correct = false;
+      if (Math.abs(parseFloat(decay.value) - sample.decay) > 0.3) correct = false;
+      if (Math.abs(parseFloat(sustain.value) - sample.sustain) > 0.3) correct = false;
+      if (Math.abs(parseFloat(release.value) - sample.release) > 0.3) correct = false;
+
+      const userFilter = filterType.value;
+      const sampleFilter = sample.filterType;
+      if (userFilter !== sampleFilter) {
+        correct = false;
+      }
+
+      if (Math.abs(parseFloat(cutoff.value) - sample.cutoff) > 200) correct = false;
+
+      const result = document.getElementById("quizResult");
+      if (correct) {
+        result.innerText = "$2705 正解です！次の問題に進みます...";
+        setTimeout(() => {
+          quizIndex++;
+          if (quizIndex >= quizData.length) {
+            document.getElementById("quizContainer").innerHTML = "<h2>$D83C$DF89 全問正解！おめでとうございます！</h2>";
+          } else {
+            renderQuiz();
+          }
+        }, 1000);
+      } else {
+        let message = "$274C 不正解です。設定を見直してみましょう。";
+        if (userFilter !== sampleFilter) {
+          message += `\n※ お題のフィルターは「${sampleFilter}」ですが、現在は「${userFilter}」になっています。`;
+        }
+        result.innerText = message;
+      }
+    }
+        
+    // 問題文にフィルター種類を追加するよう修正
+    function renderQuiz() {
+      const container = document.getElementById("quizContainer");
+      const q = quizData[quizIndex];
+      document.getElementById("quizFeedback").innerText = "";
+      document.getElementById("quizResult").innerText = "";
+      document.getElementById("quizHint").innerText = "";
+      document.getElementById("quizImage").innerHTML = "";
+      if (q.image) {
+      document.getElementById("quizImage").innerHTML = `<img src="${q.image}" alt="波形画像" style="width:300px;">`;
+      }
+      if (q.type === "choice") {
+        document.getElementById("quizQuestion").innerText = q.question;
+        const choicesDiv = document.getElementById("quizChoices");
+        choicesDiv.innerHTML = "";
+        q.choices.forEach((choice, idx) => {
+          const btn = document.createElement("button");
+          btn.innerText = choice;
+          btn.onclick = () => {
+            const feedback = document.getElementById("quizFeedback");
+            if (idx === q.correctIndex) {
+              feedback.innerText = "$2705 正解です！次の問題に進みます...";
+              setTimeout(() => {
+                quizIndex++;
+                renderQuiz();
+              }, 1000);
+            } else {
+              feedback.innerText = "$274C 不正解です。";
+            }
+          };
+          choicesDiv.appendChild(btn);
+        });
+      } else if (q.type === "synth") {
+        const sample = quizSamples[q.sampleIndex];
+        document.getElementById("quizQuestion").innerHTML = `$D83C$DFA7 ${q.question}（フィルター: ${sample.filterType}）`;
+        const choicesDiv = document.getElementById("quizChoices");
+        choicesDiv.innerHTML = `
+          <button onclick="playQuizSample(${q.sampleIndex})">$D83C$DFB5 お題の音を再生</button>
+          <button onclick="document.getElementById('quizHint').innerText = '${sample.hint}'">$D83D$DCA1 ヒントを見る</button>
+          <button onclick="checkQuizAnswer(${q.sampleIndex})">$2705 答え合わせ</button>
+          <button onclick="document.getElementById('quizHint').innerText = '${sample.answer}'">$D83D$DD0D 答えを見る</button>
+        `;
+      }
+    }
+
+    document.addEventListener("touchend", () => {
+  if (activeTouchKey) {
+    stopNote();  
+    activeTouchKey = null;
+  }
+});
+
+
+
+  // 最初のクイズを表示
+  window.onload = () => {
+    renderQuiz();
+  };
+*/
+
+document.getElementById("toggleScope").addEventListener("change", () => {
+  if (document.getElementById("toggleScope").checked) {
+    visualize(); // 再描画開始
+  } else {
+    scopeCtx.clearRect(0, 0, scope.width, scope.height); // 即座に非表示
+  }
+});
+
+
+  </script>
+</body>
+</html>

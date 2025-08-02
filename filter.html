@@ -1,0 +1,191 @@
+﻿
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>filter taikenn</title>
+ <link rel="stylesheet" href="sidebar.css">
+  <script src="sidebar.js" defer></script>
+  <style>
+    body { text-align: center; font-family: sans-serif; }
+    #xy-pad, #spectrum {
+      border: 2px solid #333;
+      background: #eee;
+      touch-action: none;
+      margin-bottom: 10px;
+    }
+    select {
+      margin: 10px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+<!-- 折りたたみボタン -->
+  <button id="sidebarToggle">≡</button>
+
+  <!-- サイドバー（目次） -->
+  <div id="sidebar" class="">
+    <a href="index.html">オシレーター</a>
+	<a href="oscillator.html">オシレーター体験</a>
+    <a href="page1.html">フィルター</a>
+	<a href="filter.html">フィルター体験</a>
+    <a href="page2.html">ADSR</a>
+	<a href="ADSR.html">ADSR体験</a>
+	<a href="synthe-taiken.html">シンセサイザー体験</a>
+  </div>
+  <h1>フィルター体験</h1>
+
+  <canvas id="xy-pad" width="300" height="300"></canvas>
+  <p>X軸: カットオフ周波数 / Y軸: レゾナンス(Q値)</p>
+
+  <canvas id="spectrum" width="300" height="100"></canvas>
+  <p>↑ フィルター通過後の周波数特性（リアルタイム表示）</p>
+
+  <select name="フィルターを選択" id="selectfilter">
+  <option value="bandpass">バンドパスフィルター</option>
+  <option value="lowpass" selected>ローパスフィルター</option>
+  <option value="highpass">ハイパスフィルター</option>
+</select>
+
+
+  <p>音階を選択：</p>
+  <select id="noteSelect">
+    <option value="261.63">ド (C4)</option>
+    <option value="293.66">レ (D4)</option>
+    <option value="329.63">ミ (E4)</option>
+    <option value="349.23">ファ (F4)</option>
+    <option value="392.00">ソ (G4)</option>
+    <option value="440.00">ラ (A4)</option>
+    <option value="493.88">シ (B4)</option>
+    <option value="523.25" selected>ド (C5)</option>
+  </select>
+
+  <p id="filterInfo">カットオフ: -, Q: -</p>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let osc, filter, analyser, filtertype;
+    let currentNoteFreq = 523.25;
+    const noteSelect = document.getElementById("noteSelect");
+
+    noteSelect.addEventListener("change", () => {
+      currentNoteFreq = parseFloat(noteSelect.value);
+    });
+
+    function setupSynth() {
+      osc = audioCtx.createOscillator();
+      filter = audioCtx.createBiquadFilter();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+
+      osc.type = 'sawtooth';
+      osc.frequency.value = currentNoteFreq;
+      filtertype = document.getElementById('selectfilter');
+      filter.type = filtertype.value;
+
+      osc.connect(filter).connect(analyser).connect(audioCtx.destination);
+    }
+
+    const canvas = document.getElementById('xy-pad');
+    const ctx = canvas.getContext('2d');
+    const spectrumCanvas = document.getElementById('spectrum');
+    const spectrumCtx = spectrumCanvas.getContext('2d');
+
+    let dragging = false;
+    let animationId;
+
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', stopDrag);
+    canvas.addEventListener('mouseleave', stopDrag);
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drag(e.touches[0]); });
+    canvas.addEventListener('touchend', stopDrag);
+
+    function startDrag(e) {
+      dragging = true;
+      setupSynth();
+      drag(e);
+      osc.start();
+      drawSpectrum();  // 周波数スペクトル描画を開始
+    }
+
+    function drag(e) {
+      if (!dragging) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+
+      const minFreq = 20;
+      const maxFreq = 20000;
+      const cutoffFreq = minFreq + x * (maxFreq - minFreq);
+
+      const qMin = 0.01;
+      const qMax = 10;
+      const qValue = qMin + (1 - y) * (qMax - qMin);
+
+      if (filter) {
+        filter.frequency.value = cutoffFreq;
+        filter.Q.value = qValue;
+      }
+
+      document.getElementById('filterInfo').textContent =
+        `カットオフ: ${cutoffFreq.toFixed(1)} Hz, Q: ${qValue.toFixed(2)}`;
+
+      drawPad(x, y);
+    }
+
+    function stopDrag() {
+      dragging = false;
+      if (osc) {
+        osc.stop();
+        osc.disconnect();
+        filter.disconnect();
+        analyser.disconnect();
+        osc = null;
+        cancelAnimationFrame(animationId);
+      }
+    }
+
+    function drawPad(x, y) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#eee';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(x * canvas.width, y * canvas.height, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawSpectrum() {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        animationId = requestAnimationFrame(draw);
+
+        analyser.getByteFrequencyData(dataArray);
+
+        spectrumCtx.clearRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+        spectrumCtx.fillStyle = '#eee';
+        spectrumCtx.fillRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+
+        const barWidth = spectrumCanvas.width / bufferLength;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const barHeight = dataArray[i] / 256 * spectrumCanvas.height;
+          spectrumCtx.fillStyle = 'black';
+          spectrumCtx.fillRect(i * barWidth, spectrumCanvas.height - barHeight, barWidth, barHeight);
+        }
+      }
+
+      draw();
+    }
+
+    drawPad(0.5, 0.5);
+  </script>
+</body>
+</html>
